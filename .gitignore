@@ -1,0 +1,11 @@
+# Local Claude Code config — never part of the published repo
+.claude/settings.json
+__pycache__/
+*.pyc
+
+# review boards written by draw.py review are outputs, not sources
+draw/examples/*.review.excalidraw
+
+# Local settings
+.env
+*.env

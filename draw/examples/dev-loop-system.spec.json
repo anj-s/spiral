@@ -1,0 +1,233 @@
+{
+  "title": "The development loop, system level",
+  "question": "which separately running things take part when you /slice, draw, build and push — and where does each run?",
+  "mode": "as-is",
+  "level": "system",
+  "example": "one /draw round: you press Send in the browser, the session reads the board, draws back, the tab updates",
+  "lanes": [
+    {
+      "id": "laptop",
+      "label": "your laptop — browser",
+      "boundary": "network"
+    },
+    {
+      "id": "vm",
+      "label": "the dev machine — where sessions run",
+      "boundary": "process"
+    },
+    {
+      "id": "github",
+      "label": "GitHub",
+      "boundary": "trust"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "you",
+      "label": "you",
+      "tech": "at the keyboard",
+      "lane": "laptop",
+      "kind": "external",
+      "role": "person"
+    },
+    {
+      "id": "page",
+      "label": "the board, open in a browser",
+      "tech": "Excalidraw 0.17 page",
+      "at": "draw/scripts/viewer.html:1",
+      "lane": "laptop",
+      "covers": [
+        "draw/scripts/viewer.html"
+      ],
+      "role": "client"
+    },
+    {
+      "id": "session",
+      "label": "a Claude Code session",
+      "tech": "CLI agent: the skills",
+      "lane": "vm",
+      "kind": "external",
+      "role": "client"
+    },
+    {
+      "id": "server",
+      "label": "draw_server.py",
+      "tech": "process: HTTP on :8766",
+      "at": "draw/scripts/draw_server.py:1",
+      "lane": "vm",
+      "covers": [
+        "draw/scripts/draw_server.py"
+      ],
+      "role": "service"
+    },
+    {
+      "id": "drawpy",
+      "label": "draw.py",
+      "tech": "CLI: Python stdlib",
+      "at": "draw/scripts/draw.py:1",
+      "lane": "vm",
+      "covers": [
+        "draw/scripts/draw.py"
+      ],
+      "role": "client"
+    },
+    {
+      "id": "board",
+      "label": "the board being drawn on",
+      "tech": "a file in the spec store",
+      "lane": "vm",
+      "kind": "external",
+      "role": "store"
+    },
+    {
+      "id": "skills",
+      "label": "the skills, as source",
+      "tech": "git: skills + agents",
+      "at": "README.md:1",
+      "lane": "vm",
+      "detail": "install-flow",
+      "covers": [
+        "README.md",
+        "development-loop.md",
+        "agents/*",
+        "workflow/*",
+        "*/SKILL.md",
+        "*/*/SKILL.md",
+        "draw/SKILL.md",
+        "draw/references/*",
+        "draw/examples/*"
+      ],
+      "row": 1,
+      "role": "store"
+    },
+    {
+      "id": "home",
+      "label": "what a session loads",
+      "tech": "settings, agents, skills",
+      "lane": "vm",
+      "kind": "external",
+      "role": "store"
+    },
+    {
+      "id": "store",
+      "label": "the spec store",
+      "tech": "git repo: specs + boards",
+      "lane": "vm",
+      "kind": "external",
+      "role": "store"
+    },
+    {
+      "id": "gh",
+      "label": "the skills repo\nthe notes repo",
+      "tech": "remote git",
+      "lane": "github",
+      "kind": "external",
+      "row": 4,
+      "role": "external"
+    }
+  ],
+  "edges": [
+    {
+      "from": "you",
+      "to": "page",
+      "label": "draws, types, presses Send",
+      "kind": "data",
+      "via": "call"
+    },
+    {
+      "from": "you",
+      "to": "session",
+      "label": "/slice · /draw · /implement",
+      "kind": "logic",
+      "via": "call"
+    },
+    {
+      "from": "page",
+      "to": "server",
+      "label": "the scene, over HTTP",
+      "kind": "data",
+      "via": "call"
+    },
+    {
+      "from": "server",
+      "to": "page",
+      "label": "the merged scene back",
+      "kind": "data",
+      "via": "call"
+    },
+    {
+      "from": "server",
+      "to": "board",
+      "label": "reads / writes the file",
+      "kind": "data",
+      "via": "call"
+    },
+    {
+      "from": "session",
+      "to": "server",
+      "label": "starts it, waits for Send",
+      "kind": "logic",
+      "via": "call"
+    },
+    {
+      "from": "session",
+      "to": "drawpy",
+      "label": "new · diff · add · phase",
+      "kind": "logic",
+      "via": "call"
+    },
+    {
+      "from": "drawpy",
+      "to": "board",
+      "label": "reads / writes elements",
+      "kind": "data",
+      "via": "call"
+    },
+    {
+      "from": "session",
+      "to": "home",
+      "label": "loads hooks + agents",
+      "kind": "data",
+      "via": "call"
+    },
+    {
+      "from": "skills",
+      "to": "home",
+      "label": "install.sh links them",
+      "kind": "data",
+      "via": "call"
+    },
+    {
+      "from": "session",
+      "to": "store",
+      "label": "commits specs + boards to main",
+      "kind": "data",
+      "via": "call"
+    },
+    {
+      "from": "store",
+      "to": "gh",
+      "label": "git push",
+      "kind": "data",
+      "via": "call"
+    },
+    {
+      "from": "skills",
+      "to": "gh",
+      "label": "git push",
+      "kind": "data",
+      "via": "call"
+    }
+  ],
+  "notes": [
+    {
+      "text": "Zoom: the ~/spiral box links to the install-flow board — the file-level picture of how a skill and its agents reach a session.",
+      "near": "skills"
+    },
+    {
+      "text": "Two writers share the board file: draw_server.py saves what the browser sends, draw.py saves the agent's edits. Every agent write bumps each element's version, so the page merges by version instead of one side overwriting the other.",
+      "near": "board",
+      "kind": "answer"
+    }
+  ]
+}

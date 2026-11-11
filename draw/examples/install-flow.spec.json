@@ -1,0 +1,186 @@
+{
+  "title": "How a skill and its agents reach a session",
+  "question": "what does ./workflow/install.sh write, where, and who reads it?",
+  "mode": "as-is",
+  "example": "the spec-code-reader agent, from agents/spec-code-reader.md to an Agent call",
+  "lanes": [
+    {
+      "id": "repo",
+      "label": "~/spiral — the source of truth (this repo)"
+    },
+    {
+      "id": "home",
+      "label": "~/.claude and ~/.local/state — what a session reads"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "install",
+      "label": "install.sh",
+      "at": "workflow/install.sh:36",
+      "lane": "repo"
+    },
+    {
+      "id": "merge",
+      "label": "merge-settings.py",
+      "at": "workflow/hooks/merge-settings.py:17",
+      "lane": "repo"
+    },
+    {
+      "id": "gen",
+      "label": "gen-agents.py",
+      "at": "workflow/gen-agents.py:32",
+      "lane": "repo"
+    },
+    {
+      "id": "agents_src",
+      "label": "the agent, as one source file\n(name + description only)",
+      "at": "agents/spec-code-reader.md:1",
+      "lane": "repo",
+      "shape": "store"
+    },
+    {
+      "id": "skills_src",
+      "label": "<skill>/SKILL.md",
+      "at": "slice/SKILL.md:1",
+      "lane": "repo",
+      "shape": "store",
+      "row": 2
+    },
+    {
+      "id": "hook",
+      "label": "inject-context.py",
+      "at": "workflow/hooks/inject-context.py:60",
+      "lane": "repo",
+      "row": 3
+    },
+    {
+      "id": "settings",
+      "label": "~/.claude/settings.json",
+      "at": "",
+      "lane": "home",
+      "kind": "external",
+      "shape": "store"
+    },
+    {
+      "id": "agents_out",
+      "label": "the same agent, ready to spawn\n(tools + model added)",
+      "at": "",
+      "lane": "home",
+      "kind": "external",
+      "shape": "store"
+    },
+    {
+      "id": "skills_link",
+      "label": "the skill, found by name\n(a symlink)",
+      "at": "",
+      "lane": "home",
+      "kind": "external",
+      "shape": "store"
+    },
+    {
+      "id": "active_spec",
+      "label": "which spec is active right now\n~/.local/state/.../active-spec",
+      "at": "",
+      "lane": "home",
+      "kind": "external",
+      "shape": "store",
+      "row": 4
+    },
+    {
+      "id": "session",
+      "label": "a Claude Code session",
+      "at": "",
+      "lane": "home",
+      "kind": "external",
+      "shape": "actor",
+      "row": 3
+    }
+  ],
+  "edges": [
+    {
+      "from": "install",
+      "to": "merge",
+      "label": "runs",
+      "when": "install | uninstall",
+      "kind": "logic"
+    },
+    {
+      "from": "install",
+      "to": "gen",
+      "label": "runs",
+      "kind": "logic"
+    },
+    {
+      "from": "install",
+      "to": "skills_link",
+      "label": "one symlink per skill",
+      "kind": "data"
+    },
+    {
+      "from": "merge",
+      "to": "settings",
+      "label": "adds 2 hook entries\n(.bak written first)",
+      "kind": "data"
+    },
+    {
+      "from": "agents_src",
+      "to": "gen",
+      "label": "the prompt and its settings",
+      "kind": "data"
+    },
+    {
+      "from": "gen",
+      "to": "agents_out",
+      "label": "written with a GENERATED marker",
+      "kind": "data"
+    },
+    {
+      "from": "skills_link",
+      "to": "skills_src",
+      "label": "points at",
+      "kind": "data"
+    },
+    {
+      "from": "session",
+      "to": "hook",
+      "label": "runs it on every turn",
+      "kind": "logic"
+    },
+    {
+      "from": "hook",
+      "to": "active_spec",
+      "label": "reads",
+      "kind": "data"
+    },
+    {
+      "from": "hook",
+      "to": "session",
+      "label": "adds the contract + active spec",
+      "kind": "data"
+    },
+    {
+      "from": "session",
+      "to": "agents_out",
+      "label": "spawns the agent by name",
+      "kind": "logic"
+    },
+    {
+      "from": "session",
+      "to": "skills_link",
+      "label": "finds the skill by name",
+      "kind": "data"
+    }
+  ],
+  "notes": [
+    {
+      "text": "Why generated, not linked: a symlink cannot add the tools+model frontmatter Claude Code needs, and some parsers reject anything but name+description.",
+      "near": "gen"
+    },
+    {
+      "text": "uninstall removes only entries carrying the marker; every other key in settings.json is preserved.",
+      "near": "settings",
+      "kind": "warning"
+    }
+  ]
+}
