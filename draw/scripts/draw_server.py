@@ -38,6 +38,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+LOOPBACK = {"127.0.0.1", "::1", "localhost"}  # binds whose Host header is checked
+LOOPBACK_NAMES = ("127.0.0.1", "localhost", "[::1]")
 EXCALIDRAW_VERSION = "0.17.6"
 CDN = {
     "react": "https://unpkg.com/react@18.3.1/umd/react.production.min.js",
@@ -174,7 +176,18 @@ def make_handler(board: Board, page: str, vendor: Path | None):
             except json.JSONDecodeError:
                 return {}
 
+        def _trusted(self, write: bool) -> bool:
+            # Only this server's own page may talk to it: a loopback Host blocks DNS rebinding,
+            # and a matching Origin on writes blocks other sites posting to 127.0.0.1.
+            bind, port = self.server.server_address[:2]
+            host = self.headers.get("Host", "")
+            if bind in LOOPBACK and host not in {f"{h}:{port}" for h in LOOPBACK_NAMES}:
+                return False
+            return not write or self.headers.get("Origin") == f"http://{host}"
+
         def do_GET(self):
+            if not self._trusted(write=False):
+                return self._send(403, b"forbidden", "text/plain")
             path, _, qs = self.path.partition("?")
             q = dict(p.split("=", 1) for p in qs.split("&") if "=" in p)
             if path == "/":
@@ -203,6 +216,8 @@ def make_handler(board: Board, page: str, vendor: Path | None):
                 self._send(404, b"not found", "text/plain")
 
         def do_POST(self):
+            if not self._trusted(write=True):
+                return self._send(403, b"forbidden", "text/plain")
             path = self.path.partition("?")[0]
             b = self._body()
             if path == "/api/save":
