@@ -93,6 +93,12 @@ blocked.
 | `agents/` | the five helper agents the skills dispatch: `spec-code-reader`, `spec-researcher`, `spec-drafter`, `code-mapper`, `spec-locator` ([how dispatch works](agents/README.md)) |
 | `workflow/` | the installer, the agent generator and the optional hook ([details](workflow/README.md)) |
 
+## Acknowledgements
+
+The idea of running a development workflow as a set of agent skills owes a lot to Garry Tan's
+[gstack](https://github.com/garrytan/gstack). Keeping specs in a separate notes repo came from
+his [gbrain](https://github.com/garrytan/gbrain).
+
 ## License
 
 [MIT](LICENSE)
