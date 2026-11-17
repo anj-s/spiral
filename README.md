@@ -1,17 +1,27 @@
 # spiral
 
-Skills for building software with a coding agent without losing track of what it built. They
-go with the post [Clearing the Context Haze](<!-- TODO: post URL -->), which explains why each
-one exists.
+A small set of skills and techniques for keeping a clear mental model of
+your system when agents are doing most of the writing.
 
-The name comes from Barry Boehm's spiral model of software development (1986): plan a small
-piece, test its riskiest assumption, review what came out, and plan the next loop from what you
-learned. These skills are that loop, rebuilt for a coding agent.
+Named after Barry Boehm's [spiral model](https://en.wikipedia.org/wiki/Spiral_model)
+of software development: plan a small piece, test its riskiest assumption,
+review what came out, and plan the next loop from what you learned.
 
-The skills attack the haze from three sides. `/slice` keeps a design small enough to hold in
-your head. `/draw` and `/builder-review` put the design and the change on a whiteboard you can
-argue with. `/talk-like-me` makes the agent explain itself in sentences you can read once and
-follow. The other five skills carry a slice from spec to merged PR.
+## Why this exists
+
+Most agent workflows today produce long, dense Markdown docs, few diagrams,
+a stream of questions about details of a system that doesn't exist yet,
+and a lot of code. Add a pile of skills copied from other repos that fire
+on their own, and neither you nor the agent ends up with a clear picture
+of what's being built.
+
+spiral is a deliberately small set aimed at fixing that.
+
+## How to use this repo
+
+Don't install these blindly; copied skills that fire on their own are
+part of the problem. Read each skill, keep what fits how you work, and
+change the rest.
 
 ## The nine skills
 
